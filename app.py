@@ -1,12 +1,10 @@
 
 from flask import Flask, render_template, request
-import openai
+from openai import OpenAI
 import os
 
 app = Flask(__name__)
-
-# 從環境變數取得 OpenAI API 金鑰
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -36,7 +34,7 @@ def index():
 """
 
         try:
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": "你是一位擅長療癒語氣的飲食顧問。"},
@@ -44,7 +42,7 @@ def index():
                 ],
                 temperature=0.8
             )
-            meal_plan = response['choices'][0]['message']['content']
+            meal_plan = response.choices[0].message.content
         except Exception as e:
             meal_plan = f"發生錯誤：{e}"
 
