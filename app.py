@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request
 from openai import OpenAI
 import os
@@ -35,12 +34,13 @@ def index():
 
         try:
             response = client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "你是一位擅長療癒語氣的飲食顧問。"},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.8
+                temperature=0.8,
+                max_tokens=800
             )
             meal_plan = response.choices[0].message.content
         except Exception as e:
