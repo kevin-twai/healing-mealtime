@@ -11,7 +11,7 @@ NOTION_TOKEN = os.getenv("NOTION_TOKEN")
 DATABASE_ID = os.getenv("DATABASE_ID")
 
 headers = {
-    "Authorization": f"Bearer {NOTION_TOKEN}",
+    "Authorization": f"Bearer " + NOTION_TOKEN,
     "Notion-Version": "2022-06-28",
     "Content-Type": "application/json"
 }
@@ -28,7 +28,13 @@ def chat():
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "你是一位專業健康教練，根據使用者的體態與目標，給出一週的飲食與健身建議。"},
+                {
+                    "role": "system",
+                    "content": (
+                        "你是一位專業的健康教練。請根據使用者輸入的基本資料，產出一週飲食與健身建議。"
+                        "請使用段落與條列式整理內容，分為三段：基本資料、飲食建議、運動建議。格式清楚、容易閱讀。"
+                    )
+                },
                 {"role": "user", "content": user_input}
             ]
         )
