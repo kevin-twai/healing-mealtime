@@ -46,6 +46,7 @@ def chat():
     try:
         response = client.chat.completions.create(
             model="gpt-4",
+            max_tokens=1000,
             messages=[
                 {
                     "role": "system",
