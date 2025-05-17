@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>療癒食光諮詢助手</title>
+    <title>療癒食光諮詢助手 - 分段版</title>
 </head>
 <body>
     <h2>療癒食光諮詢助手</h2>
@@ -12,39 +12,41 @@
     <label>體重(kg)：</label><input id="weight" value="70"><br>
     <label>目標：</label><input id="goal" value="減脂"><br>
     <button onclick="submit()">送出</button>
-    <div id="loading" style="color: gray; display:none;">諮詢中...</div>
+    <div id="loading">🔄 諮詢中...</div>
     <div id="result"></div>
 
     <script>
     async function submit() {
-        document.getElementById("loading").style.display = "block";
-        document.getElementById("result").innerHTML = "";
+        const user_input = `性別：${gender.value}，年齡：${age.value}，身高：${height.value}cm，體重：${weight.value}kg，目標：${goal.value}`;
+        const sections = ["📌 基本資料摘要", "🍽 每日三餐建議", "🍌 訓練前後飲食建議", "🏃‍♂️ 一週運動建議"];
+        result.innerHTML = "";
+        loading.style.display = "block";
 
-        const data = {
-            gender: document.getElementById("gender").value,
-            age: document.getElementById("age").value,
-            height: document.getElementById("height").value,
-            weight: document.getElementById("weight").value,
-            goal: document.getElementById("goal").value
-        };
-
-        const res = await fetch("/chat", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        });
-
-        const result = await res.json();
-        document.getElementById("loading").style.display = "none";
-
-        if (result.reply) {
-            document.getElementById("result").innerHTML = result.reply.map(r => 
-                `<h3>${r.title}</h3><pre>${r.content}</pre>`
-            ).join("");
-        } else {
-            document.getElementById("result").innerText = result.error || "發生錯誤";
+        for (let i = 0; i < sections.length; i++) {
+            const res = await fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_input, section: sections[i] })
+            });
+            const data = await res.json();
+            if (data.content) {
+                result.innerHTML += `<h3>${data.section}</h3><pre>${data.content}</pre>`;
+            } else {
+                result.innerHTML += `<h3>${data.section}</h3><p style="color:red;">發生錯誤：${data.error}</p>`;
+            }
         }
+
+        loading.style.display = "none";
     }
+
+    const gender = document.getElementById("gender");
+    const age = document.getElementById("age");
+    const height = document.getElementById("height");
+    const weight = document.getElementById("weight");
+    const goal = document.getElementById("goal");
+    const result = document.getElementById("result");
+    const loading = document.getElementById("loading");
+    loading.style.display = "none";
     </script>
 </body>
 </html>
