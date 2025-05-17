@@ -20,20 +20,19 @@ def format_reply(text):
     lines = text.split("\n")
     formatted = []
     for line in lines:
-        if "性別" in line or "身高" in line or "體重" in line or "目標" in line:
-            if not line.startswith("-"):
-                line = "- " + line.strip()
-        elif any(x in line for x in ["早餐", "午餐", "晚餐", "點心", "禁忌"]):
-            line = "- " + line.strip()
-        elif "週" in line and "：" in line or "星期" in line:
-            line = "🔹 " + line.strip()
-        elif "使用器材" in line:
-            line = "  - 使用器材：" + line.split("：")[-1].strip()
+        if any(day in line for day in ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]):
+            line = f"<br>🍽️ <b>{line.strip()}</b>"
+        elif "早餐" in line or "午餐" in line or "晚餐" in line:
+            line = f"- {line.strip()}"
+        elif "訓練前" in line or "訓練後" in line:
+            line = f"🔸 {line.strip()}"
+        elif "器材" in line:
+            line = f"  - 使用器材：{line.split('：')[-1].strip()}"
         elif "訓練方式" in line:
-            line = "  - 訓練方式：" + line.split("：")[-1].strip()
+            line = f"  - 訓練方式：{line.split('：')[-1].strip()}"
         elif "時間" in line:
-            line = "  - 時間：" + line.split("：")[-1].strip()
-        formatted.append(line.strip())
+            line = f"  - 時間：{line.split('：')[-1].strip()}"
+        formatted.append(line)
     return "\n".join(formatted)
 
 @app.route("/")
@@ -51,12 +50,12 @@ def chat():
                 {
                     "role": "system",
                     "content": (
-                        "你是一位專業健康教練，請根據使用者的性別、年齡、身高、體重與目標，"
-                        "提供以下完整建議：\n"
+                        "你是一位專業健康教練，請根據使用者提供的性別、年齡、身高、體重與目標，提供以下完整建議：\n"
                         "1. 👤 基本資料（條列）\n"
-                        "2. 🥗 飲食建議（每日三餐，每週七天）\n"
-                        "3. 🏋️‍♀️ 運動建議（週一～週日，且每項包含「使用器材」、「訓練方式」、「訓練時間」）\n"
-                        "請用清楚段落與條列格式回答，禁止自由敘述。"
+                        "2. 🥗 一週每日三餐飲食建議（星期一到星期日，各列出 早餐、午餐、晚餐）\n"
+                        "   - 每天請額外補充：訓練前飲食建議、訓練後飲食建議\n"
+                        "3. 🏋️‍♀️ 運動建議（週一～週日，包含：使用器材、訓練方式、訓練時間）\n"
+                        "請使用清楚段落與條列方式輸出，避免自由敘述與過長句。"
                     )
                 },
                 {"role": "user", "content": user_input}
@@ -66,7 +65,6 @@ def chat():
         gpt_reply = format_reply(raw_reply)
         gpt_html = gpt_reply.replace("\n", "<br>")
 
-        # 寫入 Notion
         notion_payload = {
             "parent": { "database_id": DATABASE_ID },
             "properties": {
