@@ -1,1 +1,4 @@
-flask\nopenai
+flask
+openai
+requests
+gunicorn
