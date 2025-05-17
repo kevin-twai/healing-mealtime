@@ -4,7 +4,11 @@ import os
 import requests
 
 app = Flask(__name__)
-openai.api_key = os.getenv("OPENAI_API_KEY")
+
+client = openai.OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY")
+)
+
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
 NOTION_DATABASE_ID = os.getenv("NOTION_DATABASE_ID")
 
@@ -15,7 +19,7 @@ headers = {
 }
 
 def ask_gpt(prompt):
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
@@ -51,7 +55,7 @@ def chat():
             answer = ask_gpt(prompt)
             reply.append({"title": title, "content": answer})
 
-        # 寫入 Notion（僅存每日三餐建議）
+        # 寫入 Notion（每日建議）
         notion_payload = {
             "parent": {"database_id": NOTION_DATABASE_ID},
             "properties": {
