@@ -16,6 +16,21 @@ headers = {
     "Content-Type": "application/json"
 }
 
+def format_reply(text):
+    lines = text.split("\n")
+    formatted = []
+    for line in lines:
+        if "性別" in line or "身高" in line or "體重" in line or "目標" in line:
+            if not line.startswith("-"):
+                line = "- " + line.strip()
+        elif any(x in line for x in ["早餐", "午餐", "晚餐", "點心", "禁忌"]):
+            if not line.strip().startswith(("1.", "2.", "3.", "4.", "5.")):
+                line = f"- {line.strip()}"
+        elif "週" in line and "：" in line:
+            line = "- " + line.strip()
+        formatted.append(line.strip())
+    return "\n".join(formatted)
+
 @app.route("/")
 def index():
     return render_template("chat.html")
@@ -31,37 +46,15 @@ def chat():
                 {
                     "role": "system",
                     "content": (
-                        "你是一位專業的健康教練，根據使用者提供的個人資料，請產出一週的飲食與健身建議。\n"
-                        "❗請嚴格依照以下格式輸出：每段用清楚段落與條列呈現，禁止自由敘述或合併文字。不得跳過段落標題。\n"
-                        "===\n"
-                        "👤 基本資料：\n"
-                        "- 性別：...\n"
-                        "- 年齡：...\n"
-                        "- 身高：...\n"
-                        "- 體重：...\n"
-                        "- 目標：...\n\n"
-                        "🥗 飲食建議（條列）：\n"
-                        "1. 早餐：...\n"
-                        "2. 午餐：...\n"
-                        "3. 晚餐：...\n"
-                        "4. 點心建議：...\n"
-                        "5. 禁忌食物：...\n\n"
-                        "🏃‍♂️ 運動建議（每週安排）：\n"
-                        "- 週一：...\n"
-                        "- 週二：...\n"
-                        "- 週三：...\n"
-                        "- 週四：...\n"
-                        "- 週五：...\n"
-                        "- 週六：...\n"
-                        "- 週日：...\n"
-                        "===\n"
-                        "請強制使用條列與換行格式。回覆結尾不需加任何補充說明。"
+                        "你是一位健康教練，請根據使用者的個人資料與目標提供飲食與運動建議。"
+                        "內容請包含：基本資料、飲食建議（條列）、運動建議（每週安排）。"
                     )
                 },
                 {"role": "user", "content": user_input}
             ]
         )
-        gpt_reply = response.choices[0].message.content.strip()
+        raw_reply = response.choices[0].message.content.strip()
+        gpt_reply = format_reply(raw_reply)
 
         notion_payload = {
             "parent": { "database_id": DATABASE_ID },
