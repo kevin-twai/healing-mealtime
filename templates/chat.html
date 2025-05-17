@@ -1,1 +1,46 @@
-<h1>療癒食光聊天介面 - 已整合</h1><p>這裡將顯示對話內容與 Notion 回應。</p>
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>療癒食光｜健康紀錄對話</title>
+  <style>
+    body { font-family: Arial; max-width: 600px; margin: 40px auto; }
+    #chatBox { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; }
+    .input-area { margin-top: 10px; display: flex; }
+    #userInput { flex: 1; padding: 8px; }
+    button { padding: 8px 16px; margin-left: 5px; }
+  </style>
+</head>
+<body>
+  <h1>療癒食光 聊天介面</h1>
+  <div id="chatBox"></div>
+  <div class="input-area">
+    <input type="text" id="userInput" placeholder="輸入今日早餐、心情..." />
+    <button onclick="send()">送出</button>
+  </div>
+  <script>
+    function send() {
+      const input = document.getElementById("userInput");
+      const chat = document.getElementById("chatBox");
+      const message = input.value.trim();
+      if (!message) return;
+      chat.innerHTML += `<div><b>你：</b>${message}</div>`;
+      fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      })
+      .then(res => res.json())
+      .then(data => {
+        chat.innerHTML += `<div><b>療癒食光：</b>${data.reply}</div>`;
+        input.value = "";
+        chat.scrollTop = chat.scrollHeight;
+      })
+      .catch(() => {
+        chat.innerHTML += `<div><b>系統：</b>錯誤，請稍後再試。</div>`;
+      });
+    }
+  </script>
+</body>
+</html>
