@@ -1,26 +1,31 @@
 
-from flask import Flask, request, jsonify
-import openai
+from flask import Flask, render_template, request, jsonify
 import os
+import openai
 
 app = Flask(__name__)
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+@app.route("/")
+def index():
+    return render_template("chat.html")
+
 @app.route("/chat", methods=["POST"])
 def chat():
-    user_input = request.json.get("input", "")
+    user_input = request.json.get("message", "")
     if not user_input:
-        return jsonify({"error": "Missing input"}), 400
+        return jsonify({"reply": "請輸入訊息"}), 400
 
-    # 分段請求與回應格式範例（模擬）
+    # 模擬 GPT 分段回覆格式
     sections = [
-        {"title": "基本資料分析", "content": f"根據使用者輸入：{user_input}，這是基本資料分析結果。"},
-        {"title": "一週飲食建議", "content": "這裡是一週每日三餐的飲食建議。"},
-        {"title": "運動建議", "content": "這裡是針對減脂／健身等目標的運動建議。"},
-        {"title": "訓練前後飲食建議", "content": "這裡是訓練前後應搭配的飲食建議。"}
+        {"title": "基本資料", "content": f"你輸入的是：{user_input}"},
+        {"title": "飲食建議", "content": "這是本週每日三餐建議"},
+        {"title": "訓練前後建議", "content": "這是訓練前後建議"},
+        {"title": "運動計劃", "content": "這是完整的一週運動建議"}
     ]
+    reply = "\n\n".join([f"📌 {s['title']}\n{s['content']}" for s in sections])
 
-    return jsonify({"sections": sections})
+    return jsonify({ "reply": reply })
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000)

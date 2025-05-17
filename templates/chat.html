@@ -1,0 +1,63 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>療癒食光諮詢助手</title>
+  <style>
+    body { font-family: sans-serif; background: #f9f9f9; padding: 20px; }
+    input, select { width: 100%; margin: 5px 0; padding: 6px; border-radius: 5px; border: 1px solid #ccc; }
+    button { background: #6b705c; color: #fff; padding: 10px 15px; border: none; border-radius: 5px; }
+    #loading { color: #888; margin-top: 10px; display: none; }
+    #reply { white-space: pre-wrap; margin-top: 20px; background: #fff; padding: 15px; border-radius: 6px; border: 1px solid #ddd; }
+  </style>
+</head>
+<body>
+  <h2>療癒食光諮詢助手</h2>
+  <label>性別</label>
+  <select id="gender">
+    <option value="男性">男性</option>
+    <option value="女性">女性</option>
+  </select>
+  <label>年齡</label>
+  <input id="age" type="number" />
+  <label>身高 (cm)</label>
+  <input id="height" type="number" />
+  <label>體重 (kg)</label>
+  <input id="weight" type="number" />
+  <label>目標</label>
+  <select id="goal">
+    <option value="減脂">減脂</option>
+    <option value="減重">減重</option>
+    <option value="增肌健身">增肌健身</option>
+  </select>
+  <button onclick="send()">送出</button>
+  <div id="loading">諮詢中...</div>
+  <div id="reply"></div>
+
+  <script>
+    async function send() {
+      const input = `性別：${gender.value}，年齡：${age.value}，身高：${height.value}cm，體重：${weight.value}kg，目標：${goal.value}`;
+      loading.style.display = "block";
+      reply.innerText = "";
+
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: input })
+      });
+      const data = await res.json();
+      loading.style.display = "none";
+      reply.innerText = data.reply;
+    }
+
+    const gender = document.getElementById("gender");
+    const age = document.getElementById("age");
+    const height = document.getElementById("height");
+    const weight = document.getElementById("weight");
+    const goal = document.getElementById("goal");
+    const reply = document.getElementById("reply");
+    const loading = document.getElementById("loading");
+  </script>
+</body>
+</html>
