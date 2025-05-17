@@ -1,0 +1,38 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>療癒食光 Chat</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        .chat-box { border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: scroll; }
+        .input-box { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>療癒食光｜健康紀錄聊天介面</h1>
+    <div class="chat-box" id="chatBox"></div>
+    <div class="input-box">
+        <input type="text" id="userInput" placeholder="輸入餐點或心情..." size="50"/>
+        <button onclick="sendMessage()">送出</button>
+    </div>
+    <script>
+        function sendMessage() {
+            const input = document.getElementById("userInput");
+            const chat = document.getElementById("chatBox");
+            const message = input.value;
+            chat.innerHTML += "<div><b>你：</b>" + message + "</div>";
+            fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: message })
+            })
+            .then(res => res.json())
+            .then(data => {
+                chat.innerHTML += "<div><b>療癒食光：</b>" + data.reply + "</div>";
+                input.value = "";
+            });
+        }
+    </script>
+</body>
+</html>
