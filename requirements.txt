@@ -1,1 +1,4 @@
-flask\nopenai\nrequests\ngunicorn
+flask
+openai
+requests
+gunicorn
