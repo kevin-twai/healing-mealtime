@@ -1,32 +1,37 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <title>療癒食光諮詢助手</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <h1>療癒食光諮詢助手</h1>
-    <input type="text" id="user-input" placeholder="請輸入您的基本資料與目標...">
-    <button onclick="submitInput()">送出</button>
-    <div id="chat-box"></div>
+    <form id="advisorForm">
+        <input type="text" name="user_input" placeholder="請輸入性別、年齡、身高、體重、目標（以逗號分隔）">
+        <button type="submit">送出</button>
+    </form>
+    <div id="loading" style="display:none;">🔄 諮詢中...</div>
+    <div id="result" class="response-block"></div>
 
     <script>
-        async function submitInput() {
-            const input = document.getElementById("user-input").value;
-            const chatBox = document.getElementById("chat-box");
-            chatBox.innerHTML = "<p>⏳ 正在諮詢中...</p>";
+    const form = document.getElementById("advisorForm");
+    const loading = document.getElementById("loading");
+    const result = document.getElementById("result");
 
-            const response = await fetch("/chat", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ message: input })
-            });
-            const data = await response.json();
-            chatBox.innerHTML = data.reply ? `<pre>${data.reply}</pre>` : `<pre>${data.error}</pre>`;
-        }
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        loading.style.display = "block";
+        result.innerHTML = "";
+        const formData = new FormData(form);
+        const res = await fetch("/", {
+            method: "POST",
+            body: formData
+        });
+        const data = await res.json();
+        loading.style.display = "none";
+        result.innerHTML = "<pre>" + (data.response || data.error) + "</pre>";
+    });
     </script>
 </body>
 </html>
