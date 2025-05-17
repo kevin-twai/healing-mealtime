@@ -1,20 +1,32 @@
 
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant">
 <head>
+    <meta charset="UTF-8">
     <title>療癒食光諮詢助手</title>
 </head>
 <body>
     <h1>療癒食光諮詢助手</h1>
-    <form method="POST" action="/chat">
-        <input type="text" name="user_input" placeholder="請輸入您的基本資料與目標..." required>
-        <button type="submit">送出</button>
-    </form>
-    {% if user_input %}
-        <p><strong>你輸入的是：</strong>{{ user_input }}</p>
-    {% endif %}
-    {% if response %}
-        <p><strong>回應：</strong>{{ response }}</p>
-    {% endif %}
+    <input type="text" id="user-input" placeholder="請輸入您的基本資料與目標...">
+    <button onclick="submitInput()">送出</button>
+    <div id="chat-box"></div>
+
+    <script>
+        async function submitInput() {
+            const input = document.getElementById("user-input").value;
+            const chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML = "<p>⏳ 正在諮詢中...</p>";
+
+            const response = await fetch("/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ message: input })
+            });
+            const data = await response.json();
+            chatBox.innerHTML = data.reply ? `<pre>${data.reply}</pre>` : `<pre>${data.error}</pre>`;
+        }
+    </script>
 </body>
 </html>
