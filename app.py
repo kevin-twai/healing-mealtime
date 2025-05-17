@@ -5,35 +5,29 @@ import requests
 from openai import OpenAI
 
 app = Flask(__name__)
-
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
 DATABASE_ID = os.getenv("DATABASE_ID")
-
 headers = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
     "Notion-Version": "2022-06-28",
     "Content-Type": "application/json"
 }
 
+def ask_gpt(prompt, user_input, max_tokens=1000):
+    response = client.chat.completions.create(
+        model="gpt-4",
+        max_tokens=max_tokens,
+        messages=[
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": user_input}
+        ]
+    )
+    return response.choices[0].message.content.strip()
+
 def format_reply(text):
-    lines = text.split("\n")
-    formatted = []
-    for line in lines:
-        if any(day in line for day in ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]):
-            line = f"<br>🍽️ <b>{line.strip()}</b>"
-        elif "早餐" in line or "午餐" in line or "晚餐" in line:
-            line = f"- {line.strip()}"
-        elif "訓練前" in line or "訓練後" in line:
-            line = f"🔸 {line.strip()}"
-        elif "器材" in line:
-            line = f"  - 使用器材：{line.split('：')[-1].strip()}"
-        elif "訓練方式" in line:
-            line = f"  - 訓練方式：{line.split('：')[-1].strip()}"
-        elif "時間" in line:
-            line = f"  - 時間：{line.split('：')[-1].strip()}"
-        formatted.append(line)
-    return "\n".join(formatted)
+    return text.replace("\n", "<br>").replace("訓練前", "🔸 訓練前").replace("訓練後", "🔸 訓練後")
 
 @app.route("/")
 def index():
@@ -42,40 +36,35 @@ def index():
 @app.route("/chat", methods=["POST"])
 def chat():
     user_input = request.json.get("message", "")
-
     try:
-        response = client.chat.completions.create(
-            model="gpt-4",
-            max_tokens=1000,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "你是一位專業健康教練，請根據使用者提供的性別、年齡、身高、體重與目標，提供以下完整建議：\n"
-                        "1. 👤 基本資料（條列）\n"
-                        "2. 🥗 一週每日三餐飲食建議（星期一到星期日，各列出 早餐、午餐、晚餐）\n"
-                        "   - 每天請額外補充：訓練前飲食建議、訓練後飲食建議\n"
-                        "3. 🏋️‍♀️ 運動建議（週一～週日，包含：使用器材、訓練方式、訓練時間）\n"
-                        "請使用清楚段落與條列方式輸出，避免自由敘述與過長句。"
-                    )
-                },
-                {"role": "user", "content": user_input}
-            ]
+        diet_prompt = (
+            "你是一位健康教練，請針對使用者資料提供：一週每日三餐建議（星期一至星期日），"
+            "每一天列出：早餐、午餐、晚餐，格式請用條列式與段落清楚。"
         )
-        raw_reply = response.choices[0].message.content.strip()
-        gpt_reply = format_reply(raw_reply)
-        gpt_html = gpt_reply.replace("\n", "<br>")
+        prepost_prompt = (
+            "根據使用者目標與訓練時機，請提供星期一至星期日的『訓練前飲食建議』與『訓練後飲食建議』，"
+            "每天獨立列出，並清楚標示。"
+        )
+        fitness_prompt = (
+            "請提供一週運動訓練建議，包含星期一至星期日，每日列出使用器材、訓練方式與訓練時間。"
+        )
+
+        diet_text = ask_gpt(diet_prompt, user_input)
+        prepost_text = ask_gpt(prepost_prompt, user_input)
+        fitness_text = ask_gpt(fitness_prompt, user_input)
+
+        full_reply = f"👤 使用者輸入：{user_input}<br><br>🍽️ 一週三餐建議：<br>{format_reply(diet_text)}<br><br>🍌 訓練前後飲食建議：<br>{format_reply(prepost_text)}<br><br>🏋️‍♀️ 一週運動建議：<br>{format_reply(fitness_text)}"
 
         notion_payload = {
             "parent": { "database_id": DATABASE_ID },
             "properties": {
                 "內容": { "title": [ { "text": { "content": user_input[:50] } } ] },
-                "建議": { "rich_text": [ { "text": { "content": gpt_reply[:1900] } } ] }
+                "建議": { "rich_text": [ { "text": { "content": (diet_text[:500] + "\n" + prepost_text[:300] + "\n" + fitness_text[:300])[:1900] } } ] }
             }
         }
         requests.post("https://api.notion.com/v1/pages", json=notion_payload, headers=headers)
 
-        return jsonify({ "reply": gpt_html })
+        return jsonify({ "reply": full_reply })
 
     except Exception as e:
         return jsonify({ "reply": f"⚠️ 發生錯誤：{str(e)}" })
