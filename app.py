@@ -37,33 +37,53 @@ def index():
 def chat():
     user_input = request.json.get("message", "")
     try:
+        intro_prompt = (
+            "請整理使用者的基本資料摘要，包含性別、年齡、身高、體重、目標，使用條列格式輸出。"
+        )
         diet_prompt = (
-            "你是一位健康教練，請針對使用者資料提供：一週每日三餐建議（星期一至星期日），"
-            "每一天列出：早餐、午餐、晚餐，格式請用條列式與段落清楚。"
+            "請提供一週每日三餐建議（星期一至星期日），每一天請列出：早餐、午餐、晚餐，格式請用條列式與段落清楚。"
         )
         prepost_prompt = (
-            "根據使用者目標與訓練時機，請提供星期一至星期日的『訓練前飲食建議』與『訓練後飲食建議』，"
+            "請針對星期一至星期日，列出每日的『訓練前飲食建議』與『訓練後飲食建議』，"
             "每天獨立列出，並清楚標示。"
         )
         fitness_prompt = (
-            "請提供一週運動訓練建議，包含星期一至星期日，每日列出使用器材、訓練方式與訓練時間。"
+            "請提供星期一至星期日的運動建議，每日包含：使用器材、訓練方式與訓練時間，格式用段落條列方式呈現。"
         )
 
+        intro_text = ask_gpt(intro_prompt, user_input)
         diet_text = ask_gpt(diet_prompt, user_input)
         prepost_text = ask_gpt(prepost_prompt, user_input)
         fitness_text = ask_gpt(fitness_prompt, user_input)
 
-        full_reply = f"👤 使用者輸入：{user_input}<br><br>🍽️ 一週三餐建議：<br>{format_reply(diet_text)}<br><br>🍌 訓練前後飲食建議：<br>{format_reply(prepost_text)}<br><br>🏋️‍♀️ 一週運動建議：<br>{format_reply(fitness_text)}"
+        full_reply = (
+            f"👤 使用者基本資料：<br>{format_reply(intro_text)}"
+            f"<br><br>🍽️ 一週三餐建議：<br>{format_reply(diet_text)}"
+            f"<br><br>🍌 訓練前後飲食建議：<br>{format_reply(prepost_text)}"
+            f"<br><br>🏋️‍♀️ 一週運動建議：<br>{format_reply(fitness_text)}"
+        )
 
         notion_payload = {
             "parent": { "database_id": DATABASE_ID },
             "properties": {
                 "內容": { "title": [ { "text": { "content": user_input[:50] } } ] },
-                "建議": { "rich_text": [ { "text": { "content": (diet_text[:500] + "\n" + prepost_text[:300] + "\n" + fitness_text[:300])[:1900] } } ] }
+                "建議": {
+                    "rich_text": [
+                        {
+                            "text": {
+                                "content": (
+                                    intro_text[:300]
+                                    + "\n" + diet_text[:500]
+                                    + "\n" + prepost_text[:300]
+                                    + "\n" + fitness_text[:300]
+                                )[:1900]
+                            }
+                        }
+                    ]
+                }
             }
         }
         requests.post("https://api.notion.com/v1/pages", json=notion_payload, headers=headers)
-
         return jsonify({ "reply": full_reply })
 
     except Exception as e:
