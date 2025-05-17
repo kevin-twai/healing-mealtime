@@ -3,42 +3,99 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>療癒食光｜健康紀錄對話</title>
+  <title>療癒食光｜個人化健康顧問</title>
   <style>
-    body { font-family: Arial; max-width: 600px; margin: 40px auto; }
+    body { font-family: Arial; max-width: 700px; margin: 40px auto; }
+    input, select { padding: 6px; margin: 4px 0; width: 100%; }
+    .section { margin-bottom: 20px; }
     #chatBox { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; }
-    .input-area { margin-top: 10px; display: flex; }
+    .input-area { display: flex; margin-top: 10px; }
     #userInput { flex: 1; padding: 8px; }
     button { padding: 8px 16px; margin-left: 5px; }
   </style>
 </head>
 <body>
-  <h1>療癒食光 聊天介面</h1>
-  <div id="chatBox"></div>
-  <div class="input-area">
-    <input type="text" id="userInput" placeholder="輸入今日早餐、心情..." />
-    <button onclick="send()">送出</button>
+  <h1>療癒食光｜個人化健康顧問</h1>
+
+  <div class="section">
+    <h3>👤 基本資料</h3>
+    <label>性別：
+      <select id="gender">
+        <option value="">請選擇</option>
+        <option value="男性">男性</option>
+        <option value="女性">女性</option>
+      </select>
+    </label>
+    <label>年齡：<input type="number" id="age" placeholder="如 30"></label>
+    <label>身高（cm）：<input type="number" id="height"></label>
+    <label>體重（kg）：<input type="number" id="weight"></label>
+    <label>目標：
+      <select id="goal">
+        <option value="">請選擇</option>
+        <option value="減脂">減脂</option>
+        <option value="減重">減重</option>
+        <option value="增肌健身">增肌健身</option>
+        <option value="維持健康">維持健康</option>
+      </select>
+    </label>
+    <button onclick="sendProfile()">送出資料並取得建議</button>
   </div>
+
+  <div class="section">
+    <h3>🗣️ 互動紀錄</h3>
+    <div id="chatBox"></div>
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="輸入每日紀錄（如 早餐吃了雞胸肉）" />
+      <button onclick="send()">送出</button>
+    </div>
+  </div>
+
   <script>
-    function send() {
-      const input = document.getElementById("userInput");
+    function appendMessage(who, msg) {
       const chat = document.getElementById("chatBox");
-      const message = input.value.trim();
-      if (!message) return;
-      chat.innerHTML += `<div><b>你：</b>${message}</div>`;
+      chat.innerHTML += `<div><b>${who}：</b>${msg}</div>`;
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function sendProfile() {
+      const gender = document.getElementById("gender").value;
+      const age = document.getElementById("age").value;
+      const height = document.getElementById("height").value;
+      const weight = document.getElementById("weight").value;
+      const goal = document.getElementById("goal").value;
+
+      if (!gender || !age || !height || !weight || !goal) {
+        alert("請完整填寫所有欄位");
+        return;
+      }
+
+      const profile = { gender, age, height, weight, goal };
+      appendMessage("你", `基本資料：${gender}、${age}歲、${height}cm、${weight}kg，目標：${goal}`);
       fetch("/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({
+          message: `請根據以下資料給我一週飲食與健身建議：性別${gender}、年齡${age}歲、身高${height}cm、體重${weight}kg、目標${goal}`
+        })
+      })
+      .then(res => res.json())
+      .then(data => appendMessage("療癒食光", data.reply));
+    }
+
+    function send() {
+      const input = document.getElementById("userInput");
+      const msg = input.value.trim();
+      if (!msg) return;
+      appendMessage("你", msg);
+      fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg })
       })
       .then(res => res.json())
       .then(data => {
-        chat.innerHTML += `<div><b>療癒食光：</b>${data.reply}</div>`;
+        appendMessage("療癒食光", data.reply);
         input.value = "";
-        chat.scrollTop = chat.scrollHeight;
-      })
-      .catch(() => {
-        chat.innerHTML += `<div><b>系統：</b>錯誤，請稍後再試。</div>`;
       });
     }
   </script>
