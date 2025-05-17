@@ -3,35 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <title>療癒食光諮詢助手</title>
-    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <h1>療癒食光諮詢助手</h1>
-    <form id="advisorForm">
-        <input type="text" name="user_input" placeholder="請輸入性別、年齡、身高、體重、目標（以逗號分隔）">
-        <button type="submit">送出</button>
-    </form>
-    <div id="loading" style="display:none;">🔄 諮詢中...</div>
-    <div id="result" class="response-block"></div>
+    <h2>療癒食光諮詢助手</h2>
+    <label>性別：</label><input id="gender" value="男性"><br>
+    <label>年齡：</label><input id="age" value="30"><br>
+    <label>身高(cm)：</label><input id="height" value="175"><br>
+    <label>體重(kg)：</label><input id="weight" value="70"><br>
+    <label>目標：</label><input id="goal" value="減脂"><br>
+    <button onclick="submit()">送出</button>
+    <div id="loading" style="color: gray; display:none;">諮詢中...</div>
+    <div id="result"></div>
 
     <script>
-    const form = document.getElementById("advisorForm");
-    const loading = document.getElementById("loading");
-    const result = document.getElementById("result");
+    async function submit() {
+        document.getElementById("loading").style.display = "block";
+        document.getElementById("result").innerHTML = "";
 
-    form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        loading.style.display = "block";
-        result.innerHTML = "";
-        const formData = new FormData(form);
-        const res = await fetch("/", {
+        const data = {
+            gender: document.getElementById("gender").value,
+            age: document.getElementById("age").value,
+            height: document.getElementById("height").value,
+            weight: document.getElementById("weight").value,
+            goal: document.getElementById("goal").value
+        };
+
+        const res = await fetch("/chat", {
             method: "POST",
-            body: formData
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
         });
-        const data = await res.json();
-        loading.style.display = "none";
-        result.innerHTML = "<pre>" + (data.response || data.error) + "</pre>";
-    });
+
+        const result = await res.json();
+        document.getElementById("loading").style.display = "none";
+
+        if (result.reply) {
+            document.getElementById("result").innerHTML = result.reply.map(r => 
+                `<h3>${r.title}</h3><pre>${r.content}</pre>`
+            ).join("");
+        } else {
+            document.getElementById("result").innerText = result.error || "發生錯誤";
+        }
+    }
     </script>
 </body>
 </html>
