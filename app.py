@@ -55,6 +55,7 @@ def chat():
         )
         raw_reply = response.choices[0].message.content.strip()
         gpt_reply = format_reply(raw_reply)
+        gpt_html = gpt_reply.replace("\n", "<br>")
 
         notion_payload = {
             "parent": { "database_id": DATABASE_ID },
@@ -65,7 +66,7 @@ def chat():
         }
         requests.post("https://api.notion.com/v1/pages", json=notion_payload, headers=headers)
 
-        return jsonify({ "reply": gpt_reply })
+        return jsonify({ "reply": gpt_html })
 
     except Exception as e:
         return jsonify({ "reply": f"⚠️ 發生錯誤：{str(e)}" })
