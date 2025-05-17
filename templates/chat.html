@@ -1,34 +1,101 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>療癒食光諮詢</title>
+  <title>療癒食光諮詢助手</title>
   <style>
+    body {
+      font-family: "Helvetica Neue", sans-serif;
+      background-color: #fefcf8;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h2 {
+      color: #6b705c;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 6px;
+      margin-top: 4px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      background-color: #a5a58d;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #6b705c;
+    }
     #loading {
+      display: none;
       color: #888;
       font-style: italic;
       margin-top: 10px;
+    }
+    #reply {
+      margin-top: 20px;
+      white-space: pre-wrap;
+      background: #fffef6;
+      border: 1px solid #eee;
+      padding: 15px;
+      border-radius: 8px;
     }
   </style>
 </head>
 <body>
   <h2>療癒食光諮詢助手</h2>
-  <input id="msg" placeholder="請輸入您的基本資料與目標..." style="width: 80%;" />
-  <button onclick="send()">送出</button>
 
-  <div id="loading" style="display: none;">諮詢中...</div>
-  <hr />
+  <label>性別</label>
+  <select id="gender">
+    <option value="男性">男性</option>
+    <option value="女性">女性</option>
+  </select>
+
+  <label>年齡</label>
+  <input id="age" type="number" placeholder="請輸入年齡">
+
+  <label>身高 (cm)</label>
+  <input id="height" type="number" placeholder="請輸入身高">
+
+  <label>體重 (kg)</label>
+  <input id="weight" type="number" placeholder="請輸入體重">
+
+  <label>目標</label>
+  <select id="goal">
+    <option value="減脂">減脂</option>
+    <option value="減重">減重</option>
+    <option value="增肌健身">增肌健身</option>
+  </select>
+
+  <button onclick="send()">送出</button>
+  <div id="loading">諮詢中...</div>
+
   <div id="reply"></div>
 
   <script>
     async function send() {
-      const msg = document.getElementById("msg").value;
-      const loading = document.getElementById("loading");
-      const replyDiv = document.getElementById("reply");
+      const gender = document.getElementById("gender").value;
+      const age = document.getElementById("age").value;
+      const height = document.getElementById("height").value;
+      const weight = document.getElementById("weight").value;
+      const goal = document.getElementById("goal").value;
 
-      loading.style.display = "block";
-      replyDiv.innerHTML = "";
+      const msg = `性別：${gender}，年齡：${age}，身高：${height}cm，體重：${weight}kg，目標：${goal}`;
+      document.getElementById("loading").style.display = "block";
+      document.getElementById("reply").innerHTML = "";
 
       const res = await fetch("/chat", {
         method: "POST",
@@ -37,8 +104,8 @@
       });
 
       const data = await res.json();
-      loading.style.display = "none";
-      replyDiv.innerHTML = data.reply;
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("reply").innerText = data.reply;
     }
   </script>
 </body>
