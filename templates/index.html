@@ -1,68 +1,93 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <title>療癒食光諮詢助手</title>
+  <meta charset="UTF-8">
+  <title>療癒食光諮詢助手</title>
+  <style>
+    label {
+      display: inline-block;
+      width: 80px;
+    }
+    select, input {
+      margin-bottom: 8px;
+    }
+    #result {
+      margin-top: 20px;
+      white-space: pre-line;
+    }
+  </style>
 </head>
 <body>
-    <h2>療癒食光諮詢助手</h2>
-    <label for="gender">性別：</label>
+  <h2>療癒食光諮詢助手</h2>
+
+  <div>
+    <label>性別：</label>
     <select id="gender">
-        <option value="男性">男性</option>
-        <option value="女性">女性</option>
+      <option value="男性">男性</option>
+      <option value="女性">女性</option>
     </select><br>
 
-    <label for="age">年齡：</label>
-    <input type="number" id="age" min="10" max="120"><br>
+    <label>年齡：</label>
+    <input type="number" id="age" value="51"><br>
 
-    <label for="height">身高(cm)：</label>
-    <input type="number" id="height" min="100" max="250"><br>
+    <label>身高(cm)：</label>
+    <input type="number" id="height" value="178"><br>
 
-    <label for="weight">體重(kg)：</label>
-    <input type="number" id="weight" min="30" max="200"><br>
+    <label>體重(kg)：</label>
+    <input type="number" id="weight" value="78"><br>
 
-    <label for="goal">目標：</label>
+    <label>目標：</label>
     <select id="goal">
-        <option value="減脂">減脂</option>
-        <option value="減重">減重</option>
-        <option value="減脂增肌">減脂增肌</option>
+      <option value="減脂">減脂</option>
+      <option value="減重">減重</option>
+      <option value="減脂增肌">減脂增肌</option>
     </select><br>
 
-    <button onclick="submit()">送出</button>
-    <div id="loading" style="display:none;">🔄 諮詢中...</div>
-    <div id="result"></div>
+    <button onclick="submitData()">送出</button>
+  </div>
 
-    <script>
-    async function submit() {
-        document.getElementById("loading").style.display = "block";
-        document.getElementById("result").innerHTML = "";
+  <div id="result"></div>
 
-        const data = {
-            gender: document.getElementById("gender").value,
-            age: document.getElementById("age").value,
-            height: document.getElementById("height").value,
-            weight: document.getElementById("weight").value,
-            goal: document.getElementById("goal").value
-        };
+  <script>
+    function submitData() {
+      const gender = document.getElementById('gender').value;
+      const age = parseInt(document.getElementById('age').value);
+      const height = parseInt(document.getElementById('height').value);
+      const weight = parseInt(document.getElementById('weight').value);
+      const goal = document.getElementById('goal').value;
 
-        const response = await fetch("/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
-        });
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerText = '諮詢中...';
 
-        const result = await response.json();
-        document.getElementById("loading").style.display = "none";
-        if (result.reply) {
-            document.getElementById("result").innerHTML = result.reply.map(r =>
-                `<h3>${r.title}</h3><pre>${r.content}</pre>`
-            ).join("");
-        } else {
-            document.getElementById("result").innerText = result.error || "發生錯誤";
-        }
+      fetch('/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          gender: gender,
+          age: age,
+          height: height,
+          weight: weight,
+          goal: goal
+        })
+      })
+      .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+      })
+      .then(data => {
+        resultDiv.innerHTML =
+          `📌 <b>基本資料</b><br>${data.summary}<br><br>` +
+          `🍽 <b>飲食建議</b><br>${data.meal}<br><br>` +
+          `🍌 <b>訓練前後建議</b><br>${data.pre_post_meal}<br><br>` +
+          `🏃‍♂️ <b>運動建議</b><br>${data.training}`;
+      })
+      .catch(error => {
+        resultDiv.innerText = '發生錯誤：' + error;
+      });
     }
-    </script>
+  </script>
 </body>
 </html>
