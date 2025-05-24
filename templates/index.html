@@ -57,7 +57,11 @@
       const weight = document.getElementById('weight').value;
       const goal = document.getElementById('goal').value;
 
-      const prompt = `性別：${gender}、年齡：${age}、身高：${height}、體重：${weight}、目標：${goal}`;
+      const prompt = `你是一位專業的健康顧問。使用者輸入如下：性別：${gender}，年齡：${age} 歲，身高：${height} 公分，體重：${weight} 公斤，目標：${goal}。請幫我分段提供以下建議（請清楚條列，每段不少於 5 條具體建議）：
+1. 基本資料摘要分析（包含 BMI、健康目標評估）
+2. 每日三餐飲食建議（具體列出早餐、午餐、晚餐）
+3. 訓練前後的飲食建議（具體食材與時間建議）
+4. 一週運動建議（包含器材、方式與時間建議）`;
 
       const resultDivs = [
         document.getElementById('section1'),
