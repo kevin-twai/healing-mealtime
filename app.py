@@ -1,53 +1,46 @@
-
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify
 import openai
 import os
 
 app = Flask(__name__)
+
+# 設定你的 OpenAI API 金鑰
 openai.api_key = os.getenv("OPENAI_API_KEY")
-
-def call_gpt(prompt, system_message="你是一位專業的健康顧問，請根據使用者提供的資料提供具體清楚的建議"):
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.8,
-        max_tokens=1200
-    )
-    return response['choices'][0]['message']['content']
-
-@app.route("/")
-def index():
-    return render_template("index.html")
 
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
-        data = request.json
+        data = request.get_json()
         prompt = data.get("prompt", "")
         if not prompt:
-            return jsonify({"error": "未提供 prompt"}), 400
+            return jsonify({"error": "No prompt provided"}), 400
 
-        sections = [
-            "基本資料摘要分析（包含 BMI、健康目標評估）",
-            "每日三餐飲食建議（具體列出早餐、午餐、晚餐）",
-            "訓練前後的飲食建議（具體食材與時間建議）",
-            "一週運動建議（包含器材、方式與時間建議）"
-        ]
+        # 使用 GPT-4 並要求回傳格式為明確段落
+        completion = openai.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "你是一位專業健康顧問，請用繁體中文回應，分成四段清楚條列式內容。"
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.7,
+            max_tokens=1600
+        )
 
-        results = []
-        for i, topic in enumerate(sections):
-            sub_prompt = f"{prompt}\n請僅產生以下內容第 {i+1} 段：{topic}，請條列清楚、具體豐富"
-            reply = call_gpt(sub_prompt)
-            results.append(reply)
+        # 切割回應
+        full_text = completion.choices[0].message.content.strip()
+        sections = full_text.split("\n\n")  # 兩個換行為段落分界
 
         return jsonify({
-            "section1": results[0],
-            "section2": results[1],
-            "section3": results[2],
-            "section4": results[3]
+            "section1": sections[0] if len(sections) > 0 else "無法取得建議",
+            "section2": sections[1] if len(sections) > 1 else "無法取得建議",
+            "section3": sections[2] if len(sections) > 2 else "無法取得建議",
+            "section4": sections[3] if len(sections) > 3 else "無法取得建議",
         })
 
     except Exception as e:
