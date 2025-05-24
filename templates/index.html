@@ -1,92 +1,74 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>療癒食光諮詢助手</title>
+  <title>療癒食光諮詢助手（分段版）</title>
   <style>
-    label {
-      display: inline-block;
-      width: 80px;
-    }
-    select, input {
-      margin-bottom: 8px;
-    }
-    #result {
-      margin-top: 20px;
-      white-space: pre-line;
-    }
+    label { display: inline-block; width: 80px; }
+    select, input { margin-bottom: 8px; }
+    #result { margin-top: 20px; white-space: pre-line; }
   </style>
 </head>
 <body>
-  <h2>療癒食光諮詢助手</h2>
-
+  <h2>療癒食光諮詢助手（分段版）</h2>
   <div>
     <label>性別：</label>
     <select id="gender">
       <option value="男性">男性</option>
       <option value="女性">女性</option>
     </select><br>
-
     <label>年齡：</label>
-    <input type="number" id="age" value="51"><br>
-
+    <input type="number" id="age" value="30"><br>
     <label>身高(cm)：</label>
-    <input type="number" id="height" value="178"><br>
-
+    <input type="number" id="height" value="175"><br>
     <label>體重(kg)：</label>
-    <input type="number" id="weight" value="78"><br>
-
+    <input type="number" id="weight" value="70"><br>
     <label>目標：</label>
     <select id="goal">
       <option value="減脂">減脂</option>
       <option value="減重">減重</option>
       <option value="減脂增肌">減脂增肌</option>
     </select><br>
-
     <button onclick="submitData()">送出</button>
   </div>
-
+  <div id="loading" style="color: gray; display:none;">諮詢中...</div>
   <div id="result"></div>
-
   <script>
-    function submitData() {
+    async function submitData() {
       const gender = document.getElementById('gender').value;
-      const age = parseInt(document.getElementById('age').value);
-      const height = parseInt(document.getElementById('height').value);
-      const weight = parseInt(document.getElementById('weight').value);
+      const age = document.getElementById('age').value;
+      const height = document.getElementById('height').value;
+      const weight = document.getElementById('weight').value;
       const goal = document.getElementById('goal').value;
+      const user_input = `性別：${gender}，年齡：${age}，身高：${height}cm，體重：${weight}kg，目標：${goal}`;
+      const sections = [
+        "📌 基本資料摘要",
+        "🍽 每日三餐建議",
+        "🍌 訓練前後飲食建議",
+        "🏃‍♂️ 一週運動建議"
+      ];
+      const resultDiv = document.getElementById("result");
+      const loadingDiv = document.getElementById("loading");
+      resultDiv.innerHTML = "";
+      loadingDiv.style.display = "block";
 
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerText = '諮詢中...';
+      for (let section of sections) {
+        resultDiv.innerHTML += `<h3>${section}</h3><p>請稍候...</p>`;
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_input, section })
+        });
+        const data = await res.json();
+        const blocks = resultDiv.querySelectorAll("h3");
+        blocks.forEach((block) => {
+          if (block.textContent === section) {
+            block.insertAdjacentHTML("afterend", `<pre>${data.content}</pre>`);
+          }
+        });
+      }
 
-      fetch('/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          gender: gender,
-          age: age,
-          height: height,
-          weight: weight,
-          goal: goal
-        })
-      })
-      .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
-      })
-      .then(data => {
-        resultDiv.innerHTML =
-          `📌 <b>基本資料</b><br>${data.summary}<br><br>` +
-          `🍽 <b>飲食建議</b><br>${data.meal}<br><br>` +
-          `🍌 <b>訓練前後建議</b><br>${data.pre_post_meal}<br><br>` +
-          `🏃‍♂️ <b>運動建議</b><br>${data.training}`;
-      })
-      .catch(error => {
-        resultDiv.innerText = '發生錯誤：' + error;
-      });
+      loadingDiv.style.display = "none";
     }
   </script>
 </body>
